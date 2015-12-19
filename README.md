@@ -1,5 +1,5 @@
 # Introduction
-This is a hackable Voronoi graphics generators. It supports manhattan and euclidian distance, mulithreading support and other stuff you should look into the source to understand.
+This is a hackable Voronoi graphics generators. It supports manhattan and euclidian distance, mulithreading support and other stuff you should look into the source to understand. Look at some [examples here.](http://imgur.com/gallery/pdzu4)  
 
 # Building it
 ## Dependencies
