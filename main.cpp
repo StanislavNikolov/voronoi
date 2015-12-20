@@ -1,24 +1,28 @@
+#include <random> 	// random_device...
+#include <cmath> 	// distance(sqrt)
+#include <cstring> 	// strcmp
+#include <thread> 	// threads
+#include <cstdlib>	// atoi
 #include <png++/png.hpp>
-#include <random>
-#include <cmath>
-#include <cstring>
-#include <thread>
 
 std::random_device randDev;
 std::uniform_int_distribution<int> dist(0, 255);
 std::mt19937 eng(randDev());
 
-const unsigned CLUSTERS = 1000;
-const unsigned WIDTH = 1920;
-const unsigned HEIGHT = 1080;
-const unsigned THREADS = 4;
+unsigned CLUSTERS = 400;
+unsigned WIDTH = 1920;
+unsigned HEIGHT = 1080;
+unsigned THREADS = 2;
 
-bool euclidian = true;
-bool showProgress;
+bool euclidian 				= true;
+bool showProgress 			= false;
+unsigned maxBrightness 		= 255;
 
 struct Cluster {
 	unsigned x, y, c;
-} clusters[CLUSTERS];
+};
+
+Cluster* clusters;
 
 unsigned rnd(unsigned n)
 {
@@ -60,25 +64,40 @@ void renderRow(png::rgb_pixel* data, unsigned row)
 
 int main(int argc, char** argv)
 {
-	png::image< png::rgb_pixel > image(WIDTH, HEIGHT);
-
+	// Parsing the command-line arguments
 	for(unsigned i = 0;i < argc;++ i)
 	{
-		if(strcmp(argv[i], "-no-euclid") == 0)
+		if(strcmp(argv[i], "--no-euclid") == 0)
 			euclidian = false;
-		if(strcmp(argv[i], "-progress") == 0)
+		if(strcmp(argv[i], "--progress") == 0)
 			showProgress = true;
+		if(strcmp(argv[i], "--dark") == 0)
+			maxBrightness = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--clusters") == 0)
+			CLUSTERS = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--width") == 0)
+			WIDTH = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--height") == 0)
+			HEIGHT = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--threads") == 0)
+			THREADS = atoi(argv[++ i]);
 	}
 
-	for(auto &c : clusters)
+	clusters = new Cluster[CLUSTERS];
+
+	for(unsigned i = 0;i < CLUSTERS;++ i)
 	{
-		c.x = rnd(WIDTH);
-		c.y = rnd(HEIGHT);
-		c.c = rnd(255);
+		clusters[i].x = rnd(WIDTH);
+		clusters[i].y = rnd(HEIGHT);
+		clusters[i].c = rnd(maxBrightness);
 	}
 
-	png::rgb_pixel rows[THREADS][WIDTH];
-	std::thread threads[THREADS];
+	png::rgb_pixel** rows = new png::rgb_pixel*[THREADS];
+	for(unsigned i = 0;i < THREADS;++ i)
+		rows[i] = new png::rgb_pixel[WIDTH];
+
+	std::thread* threads = new std::thread[THREADS];
+	png::image<png::rgb_pixel> image(WIDTH, HEIGHT);
 
 	unsigned lastProgress = 0;
 	for(png::uint_32 y = 0;y < HEIGHT/THREADS;++ y)
