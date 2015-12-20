@@ -5,31 +5,27 @@
 #include <cstdlib>	// atoi
 #include <png++/png.hpp>
 
-std::random_device randDev;
-std::uniform_int_distribution<int> dist(0, 255);
-std::mt19937 eng(randDev());
+// Make a pseudo-random engine seeded by a "true" random number
+std::random_device randomDevice;
+std::mt19937 prandomEngine(randomDevice());
 
-unsigned CLUSTERS = 400;
-unsigned WIDTH = 1920;
-unsigned HEIGHT = 1080;
-unsigned THREADS = 2;
+unsigned clusterCount 		= 400;
+unsigned threadCount 		= 2;
+unsigned imageWidth 		= 1920;
+unsigned imageHeight 		= 1080;
 
 bool euclidian 				= true;
 bool showProgress 			= false;
+bool saveImage 				= true;
 unsigned maxBrightness 		= 255;
 
-char DEFAULT_NAME[] 	= "output.png";
+char DEFAULT_NAME[] 		= "output.png";
 
 struct Cluster {
 	unsigned x, y, c;
 };
 
 Cluster* clusters;
-
-unsigned rnd(unsigned n)
-{
-	return eng() % n;
-}
 
 double distance(unsigned ax, unsigned ay, unsigned bx, unsigned by)
 {
@@ -43,7 +39,7 @@ unsigned closestCluster(unsigned x, unsigned y)
 {
 	unsigned output = 0;
 	double min = distance(x, y, clusters[0].x, clusters[0].y);
-	for(unsigned idx = 1;idx < CLUSTERS;++ idx)
+	for(unsigned idx = 1;idx < clusterCount;++ idx)
 	{
 		unsigned d = distance(x, y, clusters[idx].x, clusters[idx].y);
 		if(d < min)
@@ -57,7 +53,7 @@ unsigned closestCluster(unsigned x, unsigned y)
 
 void renderRow(png::gray_pixel* data, unsigned row)
 {
-	for(unsigned x = 0;x < WIDTH;++ x)
+	for(unsigned x = 0;x < imageWidth;++ x)
 	{
 		unsigned cs = closestCluster(x, row);
 		data[x] = png::gray_pixel(clusters[cs].c);
@@ -77,49 +73,54 @@ int main(int argc, char** argv)
 		if(strcmp(argv[i], "--dark") == 0)
 			maxBrightness = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--clusters") == 0)
-			CLUSTERS = atoi(argv[++ i]);
+			clusterCount = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--width") == 0)
-			WIDTH = atoi(argv[++ i]);
+			imageWidth = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--height") == 0)
-			HEIGHT = atoi(argv[++ i]);
+			imageHeight = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--threads") == 0)
-			THREADS = atoi(argv[++ i]);
+			threadCount = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--name") == 0)
 			outputName = &argv[++ i][0];
+		if(strcmp(argv[i], "--no-save") == 0)
+			saveImage = false;
 	}
 
-	clusters = new Cluster[CLUSTERS];
+	clusters = new Cluster[clusterCount];
 
-	for(unsigned i = 0;i < CLUSTERS;++ i)
+	std::uniform_int_distribution<unsigned> distColor(0, maxBrightness);
+	std::uniform_int_distribution<unsigned> distWidth(0, imageWidth);
+	std::uniform_int_distribution<unsigned> distHeght(0, imageHeight);
+	for(unsigned i = 0;i < clusterCount;++ i)
 	{
-		clusters[i].x = rnd(WIDTH);
-		clusters[i].y = rnd(HEIGHT);
-		clusters[i].c = rnd(maxBrightness);
+		clusters[i].x = distWidth(prandomEngine);
+		clusters[i].y = distHeght(prandomEngine);
+		clusters[i].c = distColor(prandomEngine);
 	}
 
-	png::gray_pixel** rows = new png::gray_pixel*[THREADS];
-	for(unsigned i = 0;i < THREADS;++ i)
-		rows[i] = new png::gray_pixel[WIDTH];
+	png::gray_pixel** rows = new png::gray_pixel*[threadCount];
+	for(unsigned i = 0;i < threadCount;++ i)
+		rows[i] = new png::gray_pixel[imageWidth];
 
-	std::thread* threads = new std::thread[THREADS];
-	png::image<png::gray_pixel> image(WIDTH, HEIGHT);
+	std::thread* threads = new std::thread[threadCount];
+	png::image<png::gray_pixel> image(imageWidth, imageHeight);
 
 	unsigned lastProgress = 0;
-	for(png::uint_32 y = 0;y < HEIGHT/THREADS;++ y)
+	for(png::uint_32 y = 0;y < imageHeight/threadCount;++ y)
 	{
-		for(unsigned i = 0;i < THREADS;++ i)
-			threads[i] = std::thread(renderRow, rows[i], y*THREADS+i);
+		for(unsigned i = 0;i < threadCount;++ i)
+			threads[i] = std::thread(renderRow, rows[i], y*threadCount+i);
 
-		for(unsigned i = 0;i < THREADS;++ i)
+		for(unsigned i = 0;i < threadCount;++ i)
 		{
 			threads[i].join();
-			for(unsigned x = 0;x < WIDTH;++ x)
-				image[y*THREADS+i][x] = rows[i][x];
+			for(unsigned x = 0;x < imageWidth;++ x)
+				image[y*threadCount+i][x] = rows[i][x];
 		}
 
 		if(showProgress)
 		{
-			float p = ((float)(y*THREADS) / HEIGHT) * 100;
+			float p = ((float)(y*threadCount) / imageHeight) * 100;
 			if(p > lastProgress + 1)
 			{
 				std::cout << (unsigned)p << "% complete." << std::endl;
@@ -128,9 +129,12 @@ int main(int argc, char** argv)
 		}
 	}
 
-	std::cout << "Saving the image..." << std::endl;
-	image.write(outputName);
-	std::cout << "Done!" << std::endl;
+	if(saveImage)
+	{
+		std::cout << "Saving the image..." << std::endl;
+		image.write(outputName);
+		std::cout << "Done!" << std::endl;
+	}
 
 	return 0;
 }
