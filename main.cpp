@@ -18,6 +18,8 @@ bool euclidian 				= true;
 bool showProgress 			= false;
 unsigned maxBrightness 		= 255;
 
+char DEFAULT_NAME[] 	= "output.png";
+
 struct Cluster {
 	unsigned x, y, c;
 };
@@ -64,6 +66,7 @@ void renderRow(png::gray_pixel* data, unsigned row)
 
 int main(int argc, char** argv)
 {
+	char* outputName = &DEFAULT_NAME[0];
 	// Parsing the command-line arguments
 	for(unsigned i = 0;i < argc;++ i)
 	{
@@ -81,6 +84,8 @@ int main(int argc, char** argv)
 			HEIGHT = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--threads") == 0)
 			THREADS = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--name") == 0)
+			outputName = &argv[++ i][0];
 	}
 
 	clusters = new Cluster[CLUSTERS];
@@ -124,7 +129,7 @@ int main(int argc, char** argv)
 	}
 
 	std::cout << "Saving the image..." << std::endl;
-	image.write("output.png");
+	image.write(outputName);
 	std::cout << "Done!" << std::endl;
 
 	return 0;
