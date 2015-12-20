@@ -11,5 +11,12 @@ The png++ library.
 
 # Using it
 Just call the generated binary. It supports those command-line options:  
- * **-no-euclid** - use the manhattan distance to determinate every point's cluster.  
- * **-progress** - show stats while generating the image.  
+ * **--no-euclid** - use the manhattan distance to determinate every point's cluster.  
+ * **--progress** - show stats while generating the image.  
+ * **--width/height** - set the output image width/height.
+ * **--clusters** - the amount of clusters (zones) in the image.
+ * **--threads** - the number of threads working for you pleasure!
+ * **--dark** - the maximum brightness in the image (between 1 and 255).
+
+## Examples
+> ./main --no-euclid --width 1920 --height 1080 --threads 8 --clusters 1000 --dark 150
