@@ -8,7 +8,7 @@ std::random_device randDev;
 std::uniform_int_distribution<int> dist(0, 255);
 std::mt19937 eng(randDev());
 
-const unsigned CLUSTERS = 400;
+const unsigned CLUSTERS = 1000;
 const unsigned WIDTH = 1920;
 const unsigned HEIGHT = 1080;
 const unsigned THREADS = 4;
@@ -49,12 +49,12 @@ unsigned closestCluster(unsigned x, unsigned y)
 	return output;
 }
 
-void renderRow(unsigned* data, unsigned row)
+void renderRow(png::rgb_pixel* data, unsigned row)
 {
 	for(unsigned x = 0;x < WIDTH;++ x)
 	{
 		unsigned cs = closestCluster(x, row);
-		data[x] = clusters[cs].c;
+		data[x] = png::rgb_pixel(clusters[cs].c, clusters[cs].c, clusters[cs].c);
 	}
 }
 
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 		c.c = rnd(255);
 	}
 
-	unsigned rows[THREADS][WIDTH];
+	png::rgb_pixel rows[THREADS][WIDTH];
 	std::thread threads[THREADS];
 
 	unsigned lastProgress = 0;
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 		{
 			threads[i].join();
 			for(unsigned x = 0;x < WIDTH;++ x)
-				image[y*THREADS+i][x] = png::rgb_pixel(rows[i][x], rows[i][x], rows[i][x]);
+				image[y*THREADS+i][x] = rows[i][x];
 		}
 
 		if(showProgress)
