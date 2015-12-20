@@ -53,12 +53,12 @@ unsigned closestCluster(unsigned x, unsigned y)
 	return output;
 }
 
-void renderRow(png::rgb_pixel* data, unsigned row)
+void renderRow(png::gray_pixel* data, unsigned row)
 {
 	for(unsigned x = 0;x < WIDTH;++ x)
 	{
 		unsigned cs = closestCluster(x, row);
-		data[x] = png::rgb_pixel(clusters[cs].c, clusters[cs].c, clusters[cs].c);
+		data[x] = png::gray_pixel(clusters[cs].c);
 	}
 }
 
@@ -92,12 +92,12 @@ int main(int argc, char** argv)
 		clusters[i].c = rnd(maxBrightness);
 	}
 
-	png::rgb_pixel** rows = new png::rgb_pixel*[THREADS];
+	png::gray_pixel** rows = new png::gray_pixel*[THREADS];
 	for(unsigned i = 0;i < THREADS;++ i)
-		rows[i] = new png::rgb_pixel[WIDTH];
+		rows[i] = new png::gray_pixel[WIDTH];
 
 	std::thread* threads = new std::thread[THREADS];
-	png::image<png::rgb_pixel> image(WIDTH, HEIGHT);
+	png::image<png::gray_pixel> image(WIDTH, HEIGHT);
 
 	unsigned lastProgress = 0;
 	for(png::uint_32 y = 0;y < HEIGHT/THREADS;++ y)
