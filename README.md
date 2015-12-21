@@ -1,6 +1,8 @@
 # Introduction
 This is a hackable Voronoi graphics generators. It supports manhattan and euclidian distance, mulithreading support and other stuff you should look into the source to understand. Look at some [examples here.](http://imgur.com/gallery/pdzu4)  
 
+![example](http://i.imgur.com/tuBQLy0.png)
+
 # Building it
 ## Dependencies
 Compiler that supports c++11.  
