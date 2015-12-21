@@ -13,16 +13,18 @@ unsigned clusterCount 		= 400;
 unsigned threadCount 		= 2;
 unsigned imageWidth 		= 1920;
 unsigned imageHeight 		= 1080;
+unsigned frameCount 		= 1;
 
 bool euclidian 				= true;
 bool showProgress 			= false;
 bool saveImage 				= true;
 unsigned maxBrightness 		= 255;
 
-char DEFAULT_NAME[] 		= "output.png";
+char DEFAULT_NAME[] 		= "output";
 
 struct Cluster {
-	unsigned x, y, c;
+	int x, y, c;
+	float velX, velY;
 };
 
 Cluster* clusters;
@@ -60,6 +62,25 @@ void renderRow(png::gray_pixel* data, unsigned row)
 	}
 }
 
+char* genFrameName(char* baseName, unsigned id)
+{
+	unsigned baseNameSize = strlen(baseName);
+	char* output = new char[baseNameSize + 10];
+	output[baseNameSize + 9] = '\0';
+
+	unsigned i;
+	for(i = 0;baseName[i] != '\0';++ i)
+		output[i] = baseName[i];
+
+	for(i = 8;i < (unsigned)(-1);-- i)
+	{
+		output[baseNameSize + i] = (id % 10) + '0';
+		id /= 10;
+	}
+
+	return output;
+}
+
 int main(int argc, char** argv)
 {
 	char* outputName = &DEFAULT_NAME[0];
@@ -80,6 +101,8 @@ int main(int argc, char** argv)
 			imageHeight = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--threads") == 0)
 			threadCount = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--frames") == 0)
+			frameCount = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--name") == 0)
 			outputName = &argv[++ i][0];
 		if(strcmp(argv[i], "--no-save") == 0)
@@ -91,11 +114,20 @@ int main(int argc, char** argv)
 	std::uniform_int_distribution<unsigned> distColor(0, maxBrightness);
 	std::uniform_int_distribution<unsigned> distWidth(0, imageWidth);
 	std::uniform_int_distribution<unsigned> distHeght(0, imageHeight);
+	std::uniform_int_distribution<unsigned> distMotion(0, 20);
 	for(unsigned i = 0;i < clusterCount;++ i)
 	{
 		clusters[i].x = distWidth(prandomEngine);
 		clusters[i].y = distHeght(prandomEngine);
 		clusters[i].c = distColor(prandomEngine);
+		if(frameCount > 1)
+		{
+			clusters[i].velX = ((float)distMotion(prandomEngine) / 10);
+								//-(float)distMotion(prandomEngine) / 10);
+			clusters[i].velY = ((float)distMotion(prandomEngine) / 10);
+								//-(float)distMotion(prandomEngine) / 10);
+		}
+
 	}
 
 	png::gray_pixel** rows = new png::gray_pixel*[threadCount];
@@ -105,35 +137,54 @@ int main(int argc, char** argv)
 	std::thread* threads = new std::thread[threadCount];
 	png::image<png::gray_pixel> image(imageWidth, imageHeight);
 
-	unsigned lastProgress = 0;
-	for(png::uint_32 y = 0;y < imageHeight/threadCount;++ y)
+	for(unsigned currFrm = 0;currFrm < frameCount;++ currFrm)
 	{
-		for(unsigned i = 0;i < threadCount;++ i)
-			threads[i] = std::thread(renderRow, rows[i], y*threadCount+i);
-
-		for(unsigned i = 0;i < threadCount;++ i)
+		unsigned lastProgress = 0;
+		for(png::uint_32 y = 0;y < imageHeight/threadCount;++ y)
 		{
-			threads[i].join();
-			for(unsigned x = 0;x < imageWidth;++ x)
-				image[y*threadCount+i][x] = rows[i][x];
-		}
+			for(unsigned i = 0;i < threadCount;++ i)
+				threads[i] = std::thread(renderRow, rows[i], y*threadCount+i);
 
-		if(showProgress)
-		{
-			float p = ((float)(y*threadCount) / imageHeight) * 100;
-			if(p > lastProgress + 1)
+			for(unsigned i = 0;i < threadCount;++ i)
 			{
-				std::cout << (unsigned)p << "% complete." << std::endl;
-				lastProgress = p;
+				threads[i].join();
+				for(unsigned x = 0;x < imageWidth;++ x)
+					image[y*threadCount+i][x] = rows[i][x];
+			}
+
+			if(showProgress)
+			{
+				float p = ((float)(y*threadCount) / imageHeight) * 100;
+				if(p > lastProgress + 1)
+				{
+					std::cout << (unsigned)p << "% complete." << std::endl;
+					lastProgress = p;
+				}
 			}
 		}
-	}
 
-	if(saveImage)
-	{
-		std::cout << "Saving the image..." << std::endl;
-		image.write(outputName);
-		std::cout << "Done!" << std::endl;
+		if(saveImage)
+		{
+			char* tmpName = genFrameName(outputName, currFrm);
+			image.write(tmpName);
+			delete tmpName;
+			std::cout << "Done with frame " << currFrm << std::endl;
+		}
+
+		for(unsigned c = 0;c < clusterCount and currFrm+1 < frameCount;++ c)
+		{
+			clusters[c].x += clusters[c].velX;
+			if(clusters[c].x > imageWidth)
+				clusters[c].x = 0;
+			if(clusters[c].x < 0)
+				clusters[c].x = imageWidth;
+
+			clusters[c].y += clusters[c].velY;
+			if(clusters[c].y > imageHeight)
+				clusters[c].y = 0;
+			if(clusters[c].y < 0)
+				clusters[c].y = imageHeight;
+		}
 	}
 
 	return 0;
