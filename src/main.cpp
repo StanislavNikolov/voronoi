@@ -1,24 +1,14 @@
 #include <random> 	// random_device...
 #include <cmath> 	// distance(sqrt)
-#include <cstring> 	// strcmp
 #include <thread> 	// threads
-#include <cstdlib>	// atoi
 #include <png++/png.hpp>
+
+#include "parseInput.hpp"
+#include "globalVariables.hpp"
 
 // Make a pseudo-random engine seeded by a "true" random number
 std::random_device randomDevice;
 std::mt19937 prandomEngine(randomDevice());
-
-unsigned clusterCount 		= 400;
-unsigned threadCount 		= 2;
-unsigned imageWidth 		= 1920;
-unsigned imageHeight 		= 1080;
-unsigned frameCount 		= 1;
-
-bool euclidian 				= true;
-bool showProgress 			= false;
-bool saveImage 				= true;
-unsigned maxBrightness 		= 255;
 
 char DEFAULT_NAME[] 		= "output";
 
@@ -84,30 +74,9 @@ char* genFrameName(char* baseName, unsigned id)
 int main(int argc, char** argv)
 {
 	char* outputName = &DEFAULT_NAME[0];
-	// Parsing the command-line arguments
-	for(unsigned i = 0;i < argc;++ i)
-	{
-		if(strcmp(argv[i], "--no-euclid") == 0)
-			euclidian = false;
-		if(strcmp(argv[i], "--progress") == 0)
-			showProgress = true;
-		if(strcmp(argv[i], "--dark") == 0)
-			maxBrightness = atoi(argv[++ i]);
-		if(strcmp(argv[i], "--clusters") == 0)
-			clusterCount = atoi(argv[++ i]);
-		if(strcmp(argv[i], "--width") == 0)
-			imageWidth = atoi(argv[++ i]);
-		if(strcmp(argv[i], "--height") == 0)
-			imageHeight = atoi(argv[++ i]);
-		if(strcmp(argv[i], "--threads") == 0)
-			threadCount = atoi(argv[++ i]);
-		if(strcmp(argv[i], "--frames") == 0)
-			frameCount = atoi(argv[++ i]);
-		if(strcmp(argv[i], "--name") == 0)
-			outputName = &argv[++ i][0];
-		if(strcmp(argv[i], "--no-save") == 0)
-			saveImage = false;
-	}
+	parseInput(argc, argv);
+
+	std::cout << showProgress << " " << clusters << std::endl;
 
 	clusters = new Cluster[clusterCount];
 

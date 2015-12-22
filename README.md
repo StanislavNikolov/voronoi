@@ -9,7 +9,7 @@ Compiler that supports c++11.
 The png++ library.  
 
 ## Compiling it
-> c++ -std=c++11 -O2 -lpng -lpthread main.cpp -o main
+> c++ -std=c++11 -O2 -lpng -lpthread main.cpp globalVariables.cpp parseInput.cpp -o main
 
 # Using it
 Just call the generated binary. It supports those command-line options:  
