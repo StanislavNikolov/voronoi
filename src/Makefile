@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c -Wall -std=c++14
+CFLAGS=-c -Wall -std=c++14 -O2
 LDFLAGS=-lpng -lpthread
 SOURCES=main.cpp parseInput.cpp genFrameName.cpp globalVariables.cpp
 OBJECTS=$(SOURCES:.cpp=.o)

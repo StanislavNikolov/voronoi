@@ -9,7 +9,7 @@ Compiler that supports c++11.
 The png++ library.  
 
 ## Compiling it
-> cd src
+> cd src  
 > make
 
 # Using it
