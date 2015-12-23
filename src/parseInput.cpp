@@ -25,9 +25,20 @@ void parseInput(int argc, char** argv)
 			threadCount = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--frames") == 0)
 			frameCount = atoi(argv[++ i]);
-		//if(strcmp(argv[i], "--name") == 0)
-			//outputName = &argv[++ i][0];
+		if(strcmp(argv[i], "--name") == 0)
+			outputName = &argv[++ i][0];
 		if(strcmp(argv[i], "--no-save") == 0)
 			saveImage = false;
+	}
+
+	if(outputName == nullptr)
+	{
+		outputName = new char[6];
+		outputName[0] = 'f';
+		outputName[1] = 'r';
+		outputName[2] = 'a';
+		outputName[3] = 'm';
+		outputName[4] = 'e';
+		outputName[5] = '\0';
 	}
 }

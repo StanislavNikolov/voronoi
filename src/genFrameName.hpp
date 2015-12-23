@@ -1,0 +1,1 @@
+char* genFrameName(char*, unsigned);
