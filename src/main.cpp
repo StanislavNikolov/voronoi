@@ -190,6 +190,10 @@ int main(int argc, char** argv)
 			if(clusters[c].y < 0)
 				clusters[c].y = imageHeight;
 		}
+
+		// Recalculate cluster color
+		if(colorizationMethod == 1) colorizeByDistance();
+		if(colorizationMethod == 2) colorizeByDiffusion();
 	}
 
 	return 0;
