@@ -1,6 +1,7 @@
 #include <random> 	// random_device...
 #include <cmath> 	// distance(sqrt)
 #include <thread> 	// threads
+#include <algorithm>// sort
 #include <png++/png.hpp>
 
 #include "parseInput.hpp"
@@ -18,7 +19,7 @@ struct Cluster {
 
 Cluster* clusters;
 
-double distance(unsigned ax, unsigned ay, unsigned bx, unsigned by)
+float distance(unsigned ax, unsigned ay, unsigned bx, unsigned by)
 {
 	if(euclidian)
 		return sqrt((ax-bx)*(ax-bx) + (ay-by)*(ay-by));
@@ -26,10 +27,66 @@ double distance(unsigned ax, unsigned ay, unsigned bx, unsigned by)
 		return (std::max(ax, bx) - std::min(ax, bx)) + (std::max(ay, by) - std::min(ay, by));
 }
 
+void colorizeByDistance()
+{
+	unsigned curr = 0;
+	bool* used = new bool[clusterCount];
+	for(unsigned i = 0;i < clusterCount;++ i) used[i] = false;
+
+	float color = 0, step = (float) maxBrightness / clusterCount;
+	for(unsigned clustersLeft = clusterCount;clustersLeft > 0;-- clustersLeft)
+	{
+		// color the current one
+		clusters[curr].c = (int) color;
+		color += step;
+		used[curr] = true;
+
+		// go to the next one
+		unsigned next = 0;
+		float min = 0;
+		for(unsigned idx = 0;idx < clusterCount;++ idx)
+		{
+			if(used[idx]) continue;
+			unsigned d = distance(clusters[curr].x, clusters[curr].y,
+					clusters[idx].x, clusters[idx].y);
+			if(d < min or min == 0)
+			{
+				min = d;
+				next = idx;
+			}
+		}
+		curr = next;
+	}
+
+	delete used;
+}
+
+void colorizeByDiffusion()
+{
+	std::pair<float, unsigned>* dist = new std::pair<float, unsigned>[clusterCount];
+
+	for(unsigned i = 0;i < clusterCount;++ i)
+	{
+		dist[i].first = distance(0, 0, clusters[i].x, clusters[i].y);
+		dist[i].second = i;
+	}
+
+	std::sort(dist, dist + clusterCount);
+
+	float color = 0, step = (float) maxBrightness / clusterCount;
+	for(unsigned i = 0;i < clusterCount;++ i)
+	{
+		clusters[dist[i].second].c = (int) color;
+		color += step;
+	}
+
+	delete dist;
+}
+
 unsigned closestCluster(unsigned x, unsigned y)
 {
 	unsigned output = 0;
-	double min = distance(x, y, clusters[0].x, clusters[0].y);
+	float min = distance(x, y, clusters[0].x, clusters[0].y);
 	for(unsigned idx = 1;idx < clusterCount;++ idx)
 	{
 		unsigned d = distance(x, y, clusters[idx].x, clusters[idx].y);
@@ -65,7 +122,7 @@ int main(int argc, char** argv)
 	{
 		clusters[i].x = distWidth(prandomEngine);
 		clusters[i].y = distHeght(prandomEngine);
-		clusters[i].c = distColor(prandomEngine);
+		if(colorizationMethod == 0) clusters[i].c = distColor(prandomEngine);
 		if(frameCount > 1)
 		{
 			clusters[i].velX = ((float)distMotion(prandomEngine) / 10);
@@ -75,6 +132,8 @@ int main(int argc, char** argv)
 		}
 
 	}
+	if(colorizationMethod == 1) colorizeByDistance();
+	if(colorizationMethod == 2) colorizeByDiffusion();
 
 	png::gray_pixel** rows = new png::gray_pixel*[threadCount];
 	for(unsigned i = 0;i < threadCount;++ i)

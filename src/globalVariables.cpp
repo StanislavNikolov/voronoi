@@ -8,5 +8,6 @@ bool euclidian 				= true;
 bool showProgress 			= false;
 bool saveImage 				= true;
 unsigned maxBrightness 		= 255;
+unsigned colorizationMethod	= 1;
 
-char* outputName = nullptr;
+char* outputName 			= nullptr;

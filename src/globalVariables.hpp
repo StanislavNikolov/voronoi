@@ -8,5 +8,6 @@ extern bool euclidian;
 extern bool showProgress;
 extern bool saveImage;
 extern unsigned maxBrightness;
+extern unsigned colorizationMethod;
 
 extern char* outputName;

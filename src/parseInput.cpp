@@ -15,6 +15,8 @@ void parseInput(int argc, char** argv)
 			showProgress = true;
 		if(strcmp(argv[i], "--dark") == 0)
 			maxBrightness = atoi(argv[++ i]);
+		if(strcmp(argv[i], "--colm") == 0)
+			colorizationMethod = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--clusters") == 0)
 			clusterCount = atoi(argv[++ i]);
 		if(strcmp(argv[i], "--width") == 0)
