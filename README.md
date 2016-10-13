@@ -20,6 +20,7 @@ Just call the generated binary. It supports those command-line options:
  * **--clusters** - the amount of clusters (zones) in the image.
  * **--threads** - the number of threads working for you pleasure!
  * **--dark** - the maximum brightness in the image (between 1 and 255).
+ * **--colm** - colorization method (between 0 and 2).
  * **--frames** - generate different images with the clusters moved only a little, so that they can later be stiched together into a video with something like ffmpeg.
 
 ## Examples
